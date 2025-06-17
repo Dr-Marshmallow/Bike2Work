@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const chartTypeSelector = document.getElementById('chart-type-selector');
     const generateChartBtn = document.getElementById('generate-chart');
     const chartCanvas = document.getElementById('data-chart');
-    const exportPngBtn = document.getElementById('export-png');
+    const exportPdfBtn = document.getElementById('export-pdf');
     const sortableLabelsContainer = document.getElementById('sortable-labels');
     const labelsContainer = document.querySelector('.labels-container');
     
@@ -31,10 +31,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Event Listener per il pulsante di esportazione PNG
-    exportPngBtn.addEventListener('click', function() {
+    // Event Listener per il pulsante di esportazione PDF
+    exportPdfBtn.addEventListener('click', function() {
         if (chartInstance) {
-            exportChartAsPNG();
+            exportChartAsPDF();
         }
     });
     
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Abilita il pulsante di esportazione
-                exportPngBtn.disabled = false;
+                exportPdfBtn.disabled = false;
                 
                 // Popola e mostra la lista ordinabile
                 populateSortableLabels(labels, values, colors);
@@ -318,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Errore nella generazione del grafico:', error);
                 showError(`Si è verificato un errore durante la generazione del grafico: ${error.message}`);
-                exportPngBtn.disabled = true;
+                exportPdfBtn.disabled = true;
                 labelsContainer.classList.add('hidden');
             });
     }
@@ -444,118 +444,168 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Esporta il grafico corrente come immagine PNG, includendo la legenda personalizzata
+     * Esporta il grafico corrente come PDF, includendo la legenda personalizzata
      */
-    function exportChartAsPNG() {
+    function exportChartAsPDF() {
         try {
             // Ottieni il titolo del grafico per il nome del file
             const title = chartInstance.options.plugins.title.text || 'grafico';
-            const fileName = title.replace(/:/g, '-').replace(/\s+/g, '_') + '.png';
+            const fileName = title.replace(/:/g, '-').replace(/\s+/g, '_') + '.pdf';
             
             // Verifica se esiste una legenda personalizzata
             const customLegend = document.getElementById('custom-legend');
             const isBarChart = chartInstance.config.type === 'bar';
             
+            // Prepara un div temporaneo per contenere il grafico e la legenda
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px'; // Fuori dallo schermo
+            container.style.backgroundColor = 'white';
+            container.style.width = '1000px'; // Dimensione fissa più grande
+            
+            // Crea un nuovo canvas per il grafico
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 700; // Dimensione fissa per il grafico
+            tempCanvas.height = 500;
+            tempCanvas.style.float = 'left';
+            
+            // Copia il grafico originale nel canvas temporaneo
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Ridisegna il grafico nel canvas temporaneo
+            const tempChart = new Chart(tempCtx, {
+                type: chartInstance.config.type,
+                data: chartInstance.config.data,
+                options: {
+                    ...chartInstance.config.options,
+                    responsive: false,
+                    animation: false,
+                    plugins: {
+                        ...chartInstance.config.options.plugins,
+                        legend: {
+                            display: !isBarChart
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            right: 0 // Rimuovi il padding extra per la legenda
+                        }
+                    }
+                }
+            });
+            
+            // Aggiungi il canvas al container
+            container.appendChild(tempCanvas);
+            
+            // Se è un istogramma, crea e aggiungi una legenda personalizzata
             if (isBarChart && customLegend) {
-                // Crea un canvas temporaneo più grande per contenere sia il grafico che la legenda
-                const tempCanvas = document.createElement('canvas');
-                const chartRect = chartCanvas.getBoundingClientRect();
+                const legendDiv = document.createElement('div');
+                legendDiv.style.float = 'right';
+                legendDiv.style.width = '280px';
+                legendDiv.style.padding = '10px';
+                legendDiv.style.fontSize = '12px';
                 
-                // Aggiungi 220px alla larghezza per la legenda
-                tempCanvas.width = chartRect.width + 220;
-                tempCanvas.height = chartRect.height;
+                // Aggiungi il titolo della legenda
+                const titleDiv = document.createElement('div');
+                titleDiv.style.fontWeight = 'bold';
+                titleDiv.style.marginBottom = '10px';
+                titleDiv.style.fontSize = '14px';
+                titleDiv.textContent = 'Legenda';
+                legendDiv.appendChild(titleDiv);
                 
-                const tempCtx = tempCanvas.getContext('2d');
-                
-                // Riempi lo sfondo con colore bianco
-                tempCtx.fillStyle = 'white';
-                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                
-                // Disegna il canvas originale del grafico
-                tempCtx.drawImage(chartCanvas, 0, 0);
-                
-                // Disegna un rettangolo per lo sfondo della legenda
-                tempCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                tempCtx.fillRect(chartRect.width, 0, 220, chartRect.height);
-                
-                // Disegna il titolo della legenda
-                tempCtx.fillStyle = '#333';
-                tempCtx.font = 'bold 14px Arial';
-                tempCtx.fillText('Legenda', chartRect.width + 10, 20);
-                
-                // Disegna gli elementi della legenda
+                // Clona gli elementi della legenda esistente
                 const items = Array.from(customLegend.children);
-                let yPos = 40;
-                
-                items.forEach((item, index) => {
-                    // Estrai il colore e il testo dell'elemento
+                items.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.style.display = 'flex';
+                    itemDiv.style.alignItems = 'flex-start';
+                    itemDiv.style.marginBottom = '8px';
+                    
+                    // Estrai il colore e il testo
                     const colorBox = item.querySelector('span:first-child');
                     const labelText = item.querySelector('span:nth-child(2)');
                     
                     if (colorBox && labelText) {
-                        const color = colorBox.style.backgroundColor;
-                        const text = labelText.textContent;
+                        // Ricrea l'indicatore di colore
+                        const colorDiv = document.createElement('div');
+                        colorDiv.style.width = '12px';
+                        colorDiv.style.height = '12px';
+                        colorDiv.style.backgroundColor = colorBox.style.backgroundColor;
+                        colorDiv.style.marginRight = '8px';
+                        colorDiv.style.marginTop = '2px';
+                        colorDiv.style.flexShrink = '0';
                         
-                        // Disegna il colore
-                        tempCtx.fillStyle = color || 'gray';
-                        tempCtx.fillRect(chartRect.width + 10, yPos - 8, 12, 12);
-                        tempCtx.strokeStyle = 'white';
-                        tempCtx.strokeRect(chartRect.width + 10, yPos - 8, 12, 12);
+                        // Ricrea il testo dell'etichetta
+                        const textDiv = document.createElement('div');
+                        textDiv.style.wordBreak = 'break-word';
+                        textDiv.style.lineHeight = '1.2';
+                        textDiv.textContent = labelText.textContent;
                         
-                        // Disegna il testo con word-wrap
-                        tempCtx.fillStyle = '#333';
-                        tempCtx.font = '12px Arial';
+                        // Aggiungi gli elementi all'item
+                        itemDiv.appendChild(colorDiv);
+                        itemDiv.appendChild(textDiv);
                         
-                        // Implementa word-wrap per il testo
-                        const maxWidth = 180;
-                        const words = text.split(' ');
-                        let line = '';
-                        let textY = yPos;
-                        
-                        words.forEach(word => {
-                            const testLine = line + (line ? ' ' : '') + word;
-                            const metrics = tempCtx.measureText(testLine);
-                            
-                            if (metrics.width > maxWidth && line !== '') {
-                                tempCtx.fillText(line, chartRect.width + 30, textY);
-                                line = word;
-                                textY += 18;
-                            } else {
-                                line = testLine;
-                            }
-                        });
-                        
-                        // Disegna l'ultima riga
-                        tempCtx.fillText(line, chartRect.width + 30, textY);
-                        
-                        // Aggiorna la posizione Y per il prossimo elemento
-                        yPos = textY + 25;
+                        // Aggiungi l'item alla legenda
+                        legendDiv.appendChild(itemDiv);
                     }
                 });
                 
-                // Crea un link temporaneo per il download
-                const link = document.createElement('a');
-                link.download = fileName;
-                
-                // Converti il canvas temporaneo in URL data
-                link.href = tempCanvas.toDataURL('image/png');
-                
-                // Simula il click sul link per avviare il download
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } else {
-                // Se non c'è una legenda personalizzata, usa il metodo originale
-                const link = document.createElement('a');
-                link.download = fileName;
-                link.href = chartCanvas.toDataURL('image/png');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                // Aggiungi la legenda al container
+                container.appendChild(legendDiv);
             }
+            
+            // Aggiungi il container al corpo del documento (necessario per html2canvas)
+            document.body.appendChild(container);
+            
+            // Usa html2canvas per convertire il container in un'immagine
+            html2canvas(container, {
+                backgroundColor: 'white',
+                scale: 2 // Raddoppia la risoluzione per migliorare la qualità
+            }).then(function(canvas) {
+                // Crea un nuovo PDF
+                const { jsPDF } = window.jspdf;
+                
+                // Crea un PDF orientato in orizzontale se necessario
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm'
+                });
+                
+                // Aggiungi un titolo al PDF
+                pdf.setFontSize(16);
+                pdf.text(title, 14, 15);
+                
+                // Calcola la dimensione dell'immagine nel PDF
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight() - 25; // Spazio per il titolo
+                
+                // Ottieni i dati dell'immagine dal canvas
+                const imgData = canvas.toDataURL('image/png');
+                
+                // Calcola le dimensioni proporzionali per adattare l'immagine alla pagina
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
+                const imgWidthPdf = imgWidth * ratio;
+                const imgHeightPdf = imgHeight * ratio;
+                
+                // Centra l'immagine nella pagina
+                const xPos = (pageWidth - imgWidthPdf) / 2;
+                
+                // Aggiungi l'immagine al PDF
+                pdf.addImage(imgData, 'PNG', xPos, 25, imgWidthPdf, imgHeightPdf);
+                
+                // Salva il PDF
+                pdf.save(fileName);
+                
+                // Rimuovi il container temporaneo
+                document.body.removeChild(container);
+            });
         } catch (error) {
-            console.error('Errore durante l\'esportazione:', error);
-            showError(`Si è verificato un errore durante l'esportazione del grafico: ${error.message}`);
+            console.error('Errore durante l\'esportazione in PDF:', error);
+            showError(`Si è verificato un errore durante l'esportazione in PDF: ${error.message}`);
         }
     }
     
