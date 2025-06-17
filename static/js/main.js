@@ -444,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Esporta il grafico corrente come immagine PNG
+     * Esporta il grafico corrente come immagine PNG, includendo la legenda personalizzata
      */
     function exportChartAsPNG() {
         try {
@@ -452,17 +452,107 @@ document.addEventListener('DOMContentLoaded', function() {
             const title = chartInstance.options.plugins.title.text || 'grafico';
             const fileName = title.replace(/:/g, '-').replace(/\s+/g, '_') + '.png';
             
-            // Crea un link temporaneo
-            const link = document.createElement('a');
-            link.download = fileName;
+            // Verifica se esiste una legenda personalizzata
+            const customLegend = document.getElementById('custom-legend');
+            const isBarChart = chartInstance.config.type === 'bar';
             
-            // Converti il canvas in URL data
-            link.href = chartCanvas.toDataURL('image/png');
-            
-            // Simula il click sul link per avviare il download
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            if (isBarChart && customLegend) {
+                // Crea un canvas temporaneo più grande per contenere sia il grafico che la legenda
+                const tempCanvas = document.createElement('canvas');
+                const chartRect = chartCanvas.getBoundingClientRect();
+                
+                // Aggiungi 220px alla larghezza per la legenda
+                tempCanvas.width = chartRect.width + 220;
+                tempCanvas.height = chartRect.height;
+                
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // Riempi lo sfondo con colore bianco
+                tempCtx.fillStyle = 'white';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // Disegna il canvas originale del grafico
+                tempCtx.drawImage(chartCanvas, 0, 0);
+                
+                // Disegna un rettangolo per lo sfondo della legenda
+                tempCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                tempCtx.fillRect(chartRect.width, 0, 220, chartRect.height);
+                
+                // Disegna il titolo della legenda
+                tempCtx.fillStyle = '#333';
+                tempCtx.font = 'bold 14px Arial';
+                tempCtx.fillText('Legenda', chartRect.width + 10, 20);
+                
+                // Disegna gli elementi della legenda
+                const items = Array.from(customLegend.children);
+                let yPos = 40;
+                
+                items.forEach((item, index) => {
+                    // Estrai il colore e il testo dell'elemento
+                    const colorBox = item.querySelector('span:first-child');
+                    const labelText = item.querySelector('span:nth-child(2)');
+                    
+                    if (colorBox && labelText) {
+                        const color = colorBox.style.backgroundColor;
+                        const text = labelText.textContent;
+                        
+                        // Disegna il colore
+                        tempCtx.fillStyle = color || 'gray';
+                        tempCtx.fillRect(chartRect.width + 10, yPos - 8, 12, 12);
+                        tempCtx.strokeStyle = 'white';
+                        tempCtx.strokeRect(chartRect.width + 10, yPos - 8, 12, 12);
+                        
+                        // Disegna il testo con word-wrap
+                        tempCtx.fillStyle = '#333';
+                        tempCtx.font = '12px Arial';
+                        
+                        // Implementa word-wrap per il testo
+                        const maxWidth = 180;
+                        const words = text.split(' ');
+                        let line = '';
+                        let textY = yPos;
+                        
+                        words.forEach(word => {
+                            const testLine = line + (line ? ' ' : '') + word;
+                            const metrics = tempCtx.measureText(testLine);
+                            
+                            if (metrics.width > maxWidth && line !== '') {
+                                tempCtx.fillText(line, chartRect.width + 30, textY);
+                                line = word;
+                                textY += 18;
+                            } else {
+                                line = testLine;
+                            }
+                        });
+                        
+                        // Disegna l'ultima riga
+                        tempCtx.fillText(line, chartRect.width + 30, textY);
+                        
+                        // Aggiorna la posizione Y per il prossimo elemento
+                        yPos = textY + 25;
+                    }
+                });
+                
+                // Crea un link temporaneo per il download
+                const link = document.createElement('a');
+                link.download = fileName;
+                
+                // Converti il canvas temporaneo in URL data
+                link.href = tempCanvas.toDataURL('image/png');
+                
+                // Simula il click sul link per avviare il download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                // Se non c'è una legenda personalizzata, usa il metodo originale
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = chartCanvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         } catch (error) {
             console.error('Errore durante l\'esportazione:', error);
             showError(`Si è verificato un errore durante l'esportazione del grafico: ${error.message}`);
