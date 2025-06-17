@@ -460,9 +460,9 @@ footer {
 .chart-type-options {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 15px;
     margin-top: 10px;
-    height: 100%;
+    height: auto;
     align-items: center;
     justify-content: flex-start;
 }
@@ -481,8 +481,8 @@ footer {
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
-    overflow: hidden;
-    margin: 2px 8px 2px 0;
+    overflow: visible;
+    margin: 2px;
 }
 
 .chart-type-option:hover {
@@ -497,31 +497,6 @@ footer {
     box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.2);
 }
 
-/* Tooltip per il tipo di grafico */
-.chart-type-option::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #2c3e50;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    z-index: 10;
-}
-
-.chart-type-option:hover::after {
-    opacity: 1;
-    visibility: visible;
-    bottom: -25px;
-}
-
 .chart-icon {
     width: 30px;
     height: 30px;
@@ -530,6 +505,100 @@ footer {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+}
+
+/* Tooltip per il tipo di grafico */
+.chart-type-option::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2c3e50;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 100;
+    font-weight: 500;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.chart-type-option::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #2c3e50 transparent transparent transparent;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.chart-type-option:hover::before {
+    opacity: 1;
+    visibility: visible;
+    top: -40px;
+}
+
+.chart-type-option:hover::after {
+    opacity: 1;
+    visibility: visible;
+    top: -15px;
+}
+
+/* Miglioramenti responsive per la sezione tipologia grafico */
+@media (max-width: 768px) {
+    .controls-panel {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .form-group {
+        width: 100%;
+        margin-right: 0;
+    }
+    
+    .chart-type-selector {
+        width: 100%;
+    }
+    
+    .chart-type-options {
+        justify-content: space-between;
+    }
+    
+    header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .chart-container {
+        height: 50vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-type-options {
+        justify-content: center;
+        gap: 12px;
+    }
+    
+    .chart-type-option {
+        margin: 5px;
+    }
+}
+
+/* Stile per fare in modo che i selettori sembrino allineati */
+.chart-type-selector label, .form-group label {
+    margin-bottom: 10px;
+    display: block;
 }
 
 /* Icona Istogramma */
@@ -641,27 +710,4 @@ footer {
 /* Classe per creare righe con dati colorati */
 .table-header .table-cell {
     background-color: #2c3e50;
-}
-
-/* Responsive per il selettore di grafici */
-@media (max-width: 768px) {
-    .chart-type-options {
-        justify-content: center;
-    }
-    
-    .chart-type-option {
-        width: calc(50% - 10px);
-    }
-}
-
-@media (max-width: 480px) {
-    .chart-type-option {
-        width: 100%;
-    }
-}
-
-/* Stile per fare in modo che i selettori sembrino allineati */
-.chart-type-selector label, .form-group label {
-    margin-bottom: 10px;
-    display: block;
 } 
