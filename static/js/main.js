@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                columnSelect.innerHTML = '<option value="" selected disabled>Scegli una colonna...</option>';
+                columnSelect.innerHTML = '<option value="" selected disabled>Scegli una domanda...</option>';
                 
                 data.columns.forEach(column => {
                     const option = document.createElement('option');
@@ -71,8 +71,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             })
             .catch(error => {
-                console.error('Errore nel caricamento delle colonne:', error);
-                showError(`Si è verificato un errore durante il caricamento delle colonne: ${error.message}`);
+                console.error('Errore nel caricamento delle domande:', error);
+                showError(`Si è verificato un errore durante il caricamento delle domande: ${error.message}`);
             });
     }
     
