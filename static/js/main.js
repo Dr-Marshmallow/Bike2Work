@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Se è una colonna checkbox, aggiorna il titolo per indicarlo
                 const displayColumn = isCheckbox ? `${column} (risposte multiple)` : column;
                 
-                // Genera colori casuali
+                // Genera colori distribuiti uniformemente nell'arco HSL
                 const colors = generateColors(labels.length);
                 
                 // Distruggi il grafico esistente se presente
@@ -371,6 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const listItem = document.createElement('li');
             listItem.className = 'sortable-item';
             listItem.dataset.index = index;
+            listItem.dataset.label = label; // Memorizza l'etichetta direttamente nell'elemento
             
             // Aggiungi l'indicatore di colore
             const colorIndicator = document.createElement('span');
@@ -407,122 +408,151 @@ document.addEventListener('DOMContentLoaded', function() {
      * Inizializza Sortable.js sulla lista delle etichette
      */
     function initSortable() {
-        // Distruggi l'istanza precedente se esiste
+        // Distruggi il sortable esistente se presente
         if (sortableInstance) {
             sortableInstance.destroy();
         }
         
-        // Crea una nuova istanza di Sortable
+        // Inizializza Sortable.js
         sortableInstance = new Sortable(sortableLabelsContainer, {
             animation: 150,
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            handle: '.sortable-item',
             onEnd: function(evt) {
                 // Riordina il grafico in base al nuovo ordine
-                onSortUpdate(evt);
+                reorderChart();
             }
         });
     }
     
     /**
-     * Gestisce l'aggiornamento dell'ordine delle etichette
+     * Riordina il grafico in base all'ordine corrente delle etichette nella lista ordinabile
      */
-    function onSortUpdate(evt) {
-        // Ottieni il nuovo ordine
-        const items = sortableLabelsContainer.querySelectorAll('.sortable-item');
-        const newIndices = Array.from(items).map(item => parseInt(item.dataset.index));
+    function reorderChart() {
+        if (!chartInstance || !chartData) return;
         
-        // Riorganizza i dati
-        const oldLabels = Object.keys(chartData.data);
-        const oldValues = Object.values(chartData.data);
+        // Raccogli tutte le etichette nell'ordine attuale dalla lista ordinabile
+        const items = Array.from(sortableLabelsContainer.querySelectorAll('.sortable-item'));
         
-        const newLabels = newIndices.map(index => oldLabels[index]);
-        const newValues = newIndices.map(index => oldValues[index]);
+        // Estrai le etichette direttamente dagli elementi (non più dagli indici)
+        const newLabels = items.map(item => item.dataset.label);
         
-        // Verifica se si tratta di una domanda con risposte multiple
+        // Crea array per i valori e i colori nel nuovo ordine
+        const newValues = [];
+        const newColors = [];
+        
+        // Per ogni etichetta nel nuovo ordine, trova il valore e il colore corrispondenti
+        const originalLabels = Object.keys(chartData.data);
+        const originalValues = Object.values(chartData.data);
+        const originalColors = chartInstance.data.datasets[0].backgroundColor;
+        
+        // Costruisci i nuovi array di valori e colori in base al nuovo ordine delle etichette
+        newLabels.forEach(label => {
+            const originalIndex = originalLabels.indexOf(label);
+            if (originalIndex !== -1) {
+                newValues.push(originalValues[originalIndex]);
+                newColors.push(originalColors[originalIndex]);
+            }
+        });
+        
+        // Aggiorna i dati del grafico
+        const chartType = chartInstance.config.type;
         const isCheckbox = chartData.is_checkbox === true;
         
-        // Aggiorna il grafico con il nuovo ordine
-        updateChart(newLabels, newValues, isCheckbox);
-    }
-    
-    /**
-     * Aggiorna il grafico con le nuove etichette e valori
-     */
-    function updateChart(labels, values, isCheckbox = false) {
-        // Genera nuovi colori
-        const colors = generateColors(labels.length);
-        
-        // Ottieni il tipo di grafico corrente
-        const chartType = chartInstance.config.type;
-        
-        // Aggiorna i dati
-        chartInstance.data.labels = chartType === 'bar' ? labels.map(() => '') : labels;
-        chartInstance.data.datasets[0].data = values;
-        chartInstance.data.datasets[0].backgroundColor = colors;
-        
-        // Aggiorna il titolo se necessario
-        const currentColumn = chartData.column;
-        const displayColumn = isCheckbox ? `${currentColumn} (risposte multiple)` : currentColumn;
-        chartInstance.options.plugins.title.text = displayColumn;
-        
-        // Aggiorna la legenda personalizzata per gli istogrammi
+        // Per gli istogrammi, manteniamo le etichette vuote nella visualizzazione ma conserviamo quelle reali per le tooltip
         if (chartType === 'bar') {
-            // Trova la legenda esistente
-            const existingLegend = document.getElementById('custom-legend');
-            if (existingLegend) {
-                existingLegend.innerHTML = '';
+            // Per istogrammi, visualizza etichette vuote ma memorizza quelle reali per tooltip
+            chartInstance.data.labels = newLabels.map(() => '');
+            
+            // Aggiorna anche le tooltip per usare le etichette corrette
+            chartInstance.options.plugins.tooltip.callbacks.label = function(context) {
+                // Ottieni l'etichetta dal nuovo ordine
+                const index = context.dataIndex;
+                const label = newLabels[index] || '';
+                const value = context.raw || 0;
                 
-                // Aggiungi l'informazione sulla checkbox se necessario
                 if (isCheckbox) {
-                    const infoDiv = document.createElement('div');
-                    infoDiv.style.fontSize = '11px';
-                    infoDiv.style.marginBottom = '10px';
-                    infoDiv.style.fontStyle = 'italic';
-                    infoDiv.style.color = '#666';
-                    infoDiv.textContent = 'Domanda con risposte multiple';
-                    existingLegend.appendChild(infoDiv);
+                    // Per le domande con risposte multiple, non mostrare la percentuale
+                    return `${label}: ${value}`;
+                } else {
+                    const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                    const percentage = Math.round((value / total) * 100);
+                    return `${label}: ${value} (${percentage}%)`;
                 }
-                
-                // Crea le nuove etichette
-                labels.forEach((label, index) => {
-                    const item = document.createElement('div');
-                    item.style.display = 'flex';
-                    item.style.alignItems = 'flex-start';
-                    item.style.marginBottom = '8px';
-                    
-                    // Indicatore di colore
-                    const colorBox = document.createElement('span');
-                    colorBox.style.display = 'inline-block';
-                    colorBox.style.width = '12px';
-                    colorBox.style.height = '12px';
-                    colorBox.style.backgroundColor = colors[index];
-                    colorBox.style.marginRight = '8px';
-                    colorBox.style.marginTop = '2px';
-                    colorBox.style.flexShrink = '0';
-                    
-                    // Testo dell'etichetta
-                    const labelText = document.createElement('span');
-                    labelText.style.wordBreak = 'break-all';
-                    labelText.style.lineHeight = '1.2';
-                    labelText.textContent = label;
-                    
-                    item.appendChild(colorBox);
-                    item.appendChild(labelText);
-                    
-                    existingLegend.appendChild(item);
-                });
-            }
+            };
+        } else {
+            // Per altri tipi di grafici, mostra le etichette normalmente
+            chartInstance.data.labels = newLabels;
         }
+        
+        // Aggiorna i dati nel grafico
+        chartInstance.data.datasets[0].data = newValues;
+        chartInstance.data.datasets[0].backgroundColor = newColors;
         
         // Aggiorna il grafico
         chartInstance.update();
         
+        // Aggiorna la legenda personalizzata
+        updateLegend(newLabels, newColors, isCheckbox);
+        
         // Aggiorna i dati memorizzati
-        chartData.data = labels.reduce((obj, label, index) => {
-            obj[label] = values[index];
-            return obj;
-        }, {});
+        const newData = {};
+        newLabels.forEach((label, index) => {
+            newData[label] = newValues[index];
+        });
+        chartData.data = newData;
+    }
+    
+    /**
+     * Aggiorna la legenda con le nuove etichette e colori
+     */
+    function updateLegend(labels, colors, isCheckbox) {
+        const customLegend = document.getElementById('custom-legend');
+        if (!customLegend) return;
+        
+        customLegend.innerHTML = '';
+        
+        // Aggiungi l'informazione sulla checkbox se necessario
+        if (isCheckbox) {
+            const infoDiv = document.createElement('div');
+            infoDiv.style.fontSize = '11px';
+            infoDiv.style.marginBottom = '10px';
+            infoDiv.style.fontStyle = 'italic';
+            infoDiv.style.color = '#666';
+            infoDiv.textContent = 'Domanda con risposte multiple';
+            customLegend.appendChild(infoDiv);
+        }
+        
+        // Crea le etichette nell'ordine aggiornato
+        labels.forEach((label, index) => {
+            const item = document.createElement('div');
+            item.style.display = 'flex';
+            item.style.alignItems = 'flex-start';
+            item.style.marginBottom = '8px';
+            
+            // Indicatore di colore
+            const colorBox = document.createElement('span');
+            colorBox.style.display = 'inline-block';
+            colorBox.style.width = '12px';
+            colorBox.style.height = '12px';
+            colorBox.style.backgroundColor = colors[index];
+            colorBox.style.marginRight = '8px';
+            colorBox.style.marginTop = '2px';
+            colorBox.style.flexShrink = '0';
+            
+            // Testo dell'etichetta
+            const labelText = document.createElement('span');
+            labelText.style.wordBreak = 'break-all';
+            labelText.style.lineHeight = '1.2';
+            labelText.textContent = label;
+            
+            item.appendChild(colorBox);
+            item.appendChild(labelText);
+            
+            customLegend.appendChild(item);
+        });
     }
     
     /**
@@ -851,37 +881,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Genera colori casuali per il grafico
+     * Genera un singolo colore casuale
+     */
+    function generateRandomColor() {
+        const h = Math.floor(Math.random() * 360);
+        const s = Math.floor(50 + Math.random() * 30); // 50-80%
+        const l = Math.floor(40 + Math.random() * 20); // 40-60%
+        return `hsl(${h}, ${s}%, ${l}%)`;
+    }
+    
+    /**
+     * Genera un array di colori casuali distinti tra loro
      */
     function generateColors(count) {
-        // Palette di colori predefinita per i primi 10 elementi
-        const palette = [
-            'rgba(255, 99, 132, 0.7)',   // Rosso
-            'rgba(75, 192, 192, 0.7)',   // Verde acqua
-            'rgba(255, 159, 64, 0.7)',   // Arancione
-            'rgba(54, 162, 235, 0.7)',   // Blu
-            'rgba(153, 102, 255, 0.7)',  // Viola
-            'rgba(255, 205, 86, 0.7)',   // Giallo
-            'rgba(201, 203, 207, 0.7)',  // Grigio
-            'rgba(255, 99, 255, 0.7)',   // Rosa
-            'rgba(75, 192, 75, 0.7)',    // Verde
-            'rgba(54, 72, 235, 0.7)'     // Blu scuro
-        ];
+        const colors = [];
+        const hueStep = 360 / count;
         
-        // Se ci sono più elementi di quanti colori predefiniti abbiamo,
-        // genera colori casuali per i rimanenti
-        const colors = [...palette];
-        
-        if (count > palette.length) {
-            for (let i = palette.length; i < count; i++) {
-                const r = Math.floor(Math.random() * 255);
-                const g = Math.floor(Math.random() * 255);
-                const b = Math.floor(Math.random() * 255);
-                colors.push(`rgba(${r}, ${g}, ${b}, 0.7)`);
-            }
+        for (let i = 0; i < count; i++) {
+            const h = Math.floor(i * hueStep);
+            const s = Math.floor(50 + Math.random() * 30); // 50-80%
+            const l = Math.floor(40 + Math.random() * 20); // 40-60%
+            colors.push(`hsl(${h}, ${s}%, ${l}%)`);
         }
         
-        // Restituisci solo il numero di colori necessari
-        return colors.slice(0, count);
+        return colors;
     }
 }); 
