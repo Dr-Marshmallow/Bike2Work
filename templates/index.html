@@ -19,33 +19,49 @@
 
         <div class="controls">
             <div class="form-group">
-                <label for="column-selector">Seleziona una colonna:</label>
-                <select id="column-selector" class="form-control">
-                    <option value="">Caricamento colonne...</option>
+                <label for="column-select">Seleziona una colonna:</label>
+                <select id="column-select" class="form-control">
+                    <option value="" selected disabled>Scegli una colonna...</option>
                 </select>
             </div>
             
             <div class="form-group">
-                <label for="chart-type-selector">Tipo di grafico:</label>
-                <select id="chart-type-selector" class="form-control">
-                    <option value="bar">Istogramma</option>
+                <label for="chart-type">Tipo di grafico:</label>
+                <select id="chart-type" class="form-control">
+                    <option value="bar" selected>Istogramma</option>
                     <option value="pie">Grafico a Torta</option>
                     <option value="doughnut">Grafico a Ciambella</option>
-                    <option value="polarArea">Area Polare</option>
+                    <option value="table">Tabella</option>
                 </select>
             </div>
-            
-            <button id="generate-chart" class="btn">Genera Grafico</button>
         </div>
 
-        <div class="chart-container">
-            <canvas id="data-chart"></canvas>
-            <div class="chart-actions">
-                <button id="export-pdf" class="btn secondary-btn" disabled>Esporta come PDF</button>
-            </div>
+        <div id="error-message" class="error-message hidden"></div>
+
+        <div id="chart-container" class="chart-container">
+            <canvas id="chart-canvas"></canvas>
         </div>
 
-        <div class="labels-container">
+        <div id="table-container" class="hidden">
+            <table id="data-table" class="data-table">
+                <thead>
+                    <tr>
+                        <th>Opzione</th>
+                        <th>Conteggio</th>
+                        <th>Percentuale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- I dati della tabella verranno inseriti qui dinamicamente -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="chart-actions">
+            <button id="export-pdf" class="btn secondary-btn" disabled>Esporta come PDF</button>
+        </div>
+        
+        <div id="labels-container" class="labels-container">
             <h3>Ordinamento delle etichette</h3>
             <p>Trascina le etichette per riordinare i dati nel grafico</p>
             <ul id="sortable-labels" class="sortable-list"></ul>
