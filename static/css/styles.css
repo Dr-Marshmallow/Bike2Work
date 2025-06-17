@@ -1,0 +1,363 @@
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f7fa;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #2c3e50, #4CA1AF);
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    margin-bottom: 10px;
+    font-size: 2.2rem;
+}
+
+/* Controls */
+.controls {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #2c3e50;
+    transition: color 0.3s;
+}
+
+/* Stile avanzato per i menu a tendina - NUOVO APPROCCIO */
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 12px 40px 12px 16px; /* Più spazio a destra per l'icona */
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 15px;
+    background-color: #ffffff;
+    color: #333;
+    appearance: none; /* Rimuove la freccia di default */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='%234CA1AF' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.form-control:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.7;
+    border-color: #ddd;
+}
+
+/* Effetto hover */
+.form-control:hover:not(:disabled) {
+    border-color: #4CA1AF;
+    box-shadow: 0 2px 5px rgba(76, 161, 175, 0.2);
+    background-image: url("data:image/svg+xml;utf8,<svg fill='%232c3e50' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+}
+
+/* Effetto focus */
+.form-control:focus {
+    border-color: #4CA1AF;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(76, 161, 175, 0.25);
+    background-image: url("data:image/svg+xml;utf8,<svg fill='%232c3e50' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 14l5-5 5 5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+}
+
+/* Stile per le opzioni del menu */
+.form-control option {
+    padding: 12px;
+    background-color: white;
+    color: #333;
+    font-size: 14px;
+}
+
+.btn {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    height: 46px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.btn:hover {
+    background-color: #4CA1AF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
+}
+
+.secondary-btn {
+    background-color: #4CA1AF;
+}
+
+.secondary-btn:hover {
+    background-color: #3b8896;
+}
+
+/* Error message */
+.error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 5px solid #c62828;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    animation: slide-in 0.3s ease-out forwards;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+}
+
+.error-message::before {
+    content: "⚠️ ";
+    font-size: 16px;
+    margin-right: 8px;
+}
+
+/* Close button for error message */
+.error-close-btn {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #c62828;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.error-close-btn:hover {
+    color: #b71c1c;
+}
+
+.error-message.fade-out {
+    animation: fade-out 0.3s forwards;
+}
+
+@keyframes slide-in {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* Chart container */
+.chart-container {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    height: 500px; /* Altezza fissa per prevenire l'ingrandimento infinito */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden; /* Previene contenuto che fuoriesce */
+}
+
+/* Canvas wrapper per il grafico */
+.chart-container canvas {
+    max-height: 400px; /* Altezza massima per il canvas del grafico */
+    width: 100% !important;
+    display: block;
+}
+
+.chart-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .form-group {
+        width: 100%;
+    }
+    
+    header h1 {
+        font-size: 1.8rem;
+    }
+}
+
+/* Sortable Labels */
+.labels-container {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 30px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.labels-container h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.labels-container p {
+    color: #7f8c8d;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.sortable-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.sortable-item {
+    background-color: #f5f7fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: grab;
+    transition: all 0.2s ease;
+    user-select: none;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.sortable-item:hover {
+    border-color: #4CA1AF;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(76, 161, 175, 0.2);
+}
+
+.sortable-item.sortable-chosen {
+    background-color: #ecf0f1;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    opacity: 0.8;
+}
+
+.sortable-item.sortable-ghost {
+    border: 2px dashed #4CA1AF;
+    background-color: rgba(76, 161, 175, 0.1);
+    opacity: 0.5;
+}
+
+.sortable-item .color-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.sortable-item .label-text {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.sortable-item .value-badge {
+    font-size: 12px;
+    background-color: #2c3e50;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+/* Nascondi il contenitore delle etichette quando non ci sono etichette */
+.labels-container.hidden {
+    display: none;
+} 

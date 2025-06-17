@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bike2Work - Visualizzazione Dati</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Bike2Work - Dashboard Interattiva</h1>
+            <p>Visualizzazione dei dati dal file "Risposte_unificate.xlsx"</p>
+        </header>
+
+        <div class="controls">
+            <div class="form-group">
+                <label for="column-selector">Seleziona una colonna:</label>
+                <select id="column-selector" class="form-control">
+                    <option value="">Caricamento colonne...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="chart-type-selector">Tipo di grafico:</label>
+                <select id="chart-type-selector" class="form-control">
+                    <option value="bar">Istogramma</option>
+                    <option value="pie">Grafico a Torta</option>
+                    <option value="doughnut">Grafico a Ciambella</option>
+                    <option value="polarArea">Area Polare</option>
+                </select>
+            </div>
+            
+            <button id="generate-chart" class="btn">Genera Grafico</button>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="data-chart"></canvas>
+            <div class="chart-actions">
+                <button id="export-png" class="btn secondary-btn" disabled>Esporta come PNG</button>
+            </div>
+        </div>
+
+        <div class="labels-container">
+            <h3>Ordinamento delle etichette</h3>
+            <p>Trascina le etichette per riordinare i dati nel grafico</p>
+            <ul id="sortable-labels" class="sortable-list"></ul>
+        </div>
+
+        <footer>
+            <p>Visualizzazione interattiva dei dati di "Risposte_unificate.xlsx"</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> 
