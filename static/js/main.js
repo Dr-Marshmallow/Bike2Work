@@ -552,47 +552,110 @@ document.addEventListener('DOMContentLoaded', function() {
         const chartContainer = chartCanvas.parentNode;
         const isCheckbox = chartData.is_checkbox === true;
         
-        // Clona il grafico e la legenda per l'esportazione
+        // Ottieni il titolo corretto
+        const columnName = chartData.column;
+        const displayTitle = isCheckbox ? `${columnName} (risposte multiple)` : columnName;
+        
+        // Crea un contenitore temporaneo strutturato per l'esportazione
         const tempContainer = document.createElement('div');
         tempContainer.style.width = '800px';
-        tempContainer.style.height = '600px';
+        tempContainer.style.height = '650px'; // Aumentato per fare spazio al titolo
         tempContainer.style.position = 'absolute';
         tempContainer.style.left = '-9999px';
         tempContainer.style.top = '-9999px';
-        
-        const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = 800;
-        exportCanvas.height = 600;
-        exportCanvas.style.backgroundColor = 'white';
-        
-        tempContainer.appendChild(exportCanvas);
+        tempContainer.style.backgroundColor = 'white';
+        tempContainer.style.padding = '10px';
+        tempContainer.style.boxSizing = 'border-box';
         document.body.appendChild(tempContainer);
         
-        // Clona la legenda se esiste
-        let legendElement = null;
-        const originalLegend = document.getElementById('custom-legend');
-        if (originalLegend) {
-            legendElement = originalLegend.cloneNode(true);
-            legendElement.style.position = 'absolute';
-            legendElement.style.right = '10px';
-            legendElement.style.top = '10px';
-            legendElement.style.maxHeight = 'none';
-            legendElement.style.maxWidth = '250px'; // Imposta una larghezza massima per la legenda
-            tempContainer.appendChild(legendElement);
-        }
+        // Aggiungi un titolo centrato in alto
+        const titleElement = document.createElement('div');
+        titleElement.style.width = '100%';
+        titleElement.style.textAlign = 'center';
+        titleElement.style.fontSize = '24px';
+        titleElement.style.fontWeight = 'bold';
+        titleElement.style.marginBottom = '20px';
+        titleElement.style.paddingTop = '10px';
+        titleElement.style.paddingBottom = '5px';
+        titleElement.style.borderBottom = '1px solid #ddd';
+        titleElement.textContent = displayTitle;
+        tempContainer.appendChild(titleElement);
         
-        // Crea una copia del grafico per l'esportazione
-        const ctx = exportCanvas.getContext('2d');
-        const chartType = chartInstance.config.type;
+        // Crea un contenitore per il grafico e la legenda
+        const chartLegendContainer = document.createElement('div');
+        chartLegendContainer.style.display = 'flex';
+        chartLegendContainer.style.width = '100%';
+        chartLegendContainer.style.height = 'calc(100% - 60px)'; // Sottrai lo spazio per il titolo
+        tempContainer.appendChild(chartLegendContainer);
+        
+        // Area per il grafico (a sinistra)
+        const chartArea = document.createElement('div');
+        chartArea.style.flex = '1';
+        chartArea.style.height = '100%';
+        chartLegendContainer.appendChild(chartArea);
+        
+        // Canvas per il grafico
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = 550; // Ridotto per fare spazio alla legenda
+        exportCanvas.height = 550;
+        chartArea.appendChild(exportCanvas);
+        
+        // Area per la legenda (a destra)
+        const legendArea = document.createElement('div');
+        legendArea.style.width = '230px';
+        legendArea.style.paddingLeft = '15px';
+        legendArea.style.height = '100%';
+        legendArea.style.overflowY = 'auto';
+        chartLegendContainer.appendChild(legendArea);
         
         // Prepara i dati per l'esportazione
         const labels = Object.keys(chartData.data);
         const values = Object.values(chartData.data);
         const colors = generateColors(labels.length);
+        const chartType = chartInstance.config.type;
         
-        // Ottieni il titolo corretto
-        const columnName = chartData.column;
-        const displayTitle = isCheckbox ? `${columnName} (risposte multiple)` : columnName;
+        // Crea la legenda personalizzata
+        if (chartType === 'bar') {
+            // Aggiungi l'informazione che si tratta di risposte multiple, se applicabile
+            if (isCheckbox) {
+                const infoDiv = document.createElement('div');
+                infoDiv.style.fontSize = '12px';
+                infoDiv.style.marginBottom = '15px';
+                infoDiv.style.fontStyle = 'italic';
+                infoDiv.style.color = '#666';
+                infoDiv.textContent = 'Domanda con risposte multiple';
+                legendArea.appendChild(infoDiv);
+            }
+            
+            // Crea le etichette della legenda
+            labels.forEach((label, index) => {
+                const item = document.createElement('div');
+                item.style.display = 'flex';
+                item.style.alignItems = 'flex-start';
+                item.style.marginBottom = '8px';
+                
+                // Indicatore di colore
+                const colorBox = document.createElement('span');
+                colorBox.style.display = 'inline-block';
+                colorBox.style.width = '12px';
+                colorBox.style.height = '12px';
+                colorBox.style.backgroundColor = colors[index];
+                colorBox.style.marginRight = '8px';
+                colorBox.style.marginTop = '2px';
+                colorBox.style.flexShrink = '0';
+                
+                // Testo dell'etichetta
+                const labelText = document.createElement('span');
+                labelText.style.wordBreak = 'break-word';
+                labelText.style.lineHeight = '1.2';
+                labelText.textContent = `${label} (${values[index]})`;
+                
+                item.appendChild(colorBox);
+                item.appendChild(labelText);
+                
+                legendArea.appendChild(item);
+            });
+        }
         
         // Imposta le opzioni per l'esportazione
         const exportOptions = {
@@ -613,25 +676,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 },
                 title: {
-                    display: true,
-                    text: displayTitle,
-                    font: {
-                        size: 18
-                    },
-                    padding: {
-                        bottom: 10
-                    }
+                    display: false, // Nascondi il titolo del grafico, usiamo quello personalizzato
                 },
                 tooltip: {
                     enabled: false
-                }
-            },
-            layout: {
-                padding: {
-                    top: 10,
-                    right: legendElement ? 280 : 10, // Aumenta lo spazio a destra se c'è la legenda
-                    bottom: 10,
-                    left: 10
                 }
             }
         };
@@ -641,13 +689,13 @@ document.addEventListener('DOMContentLoaded', function() {
             exportOptions.scales = {
                 x: {
                     ticks: {
-                        display: !legendElement, // Mostra le etichette solo se non c'è la legenda
+                        display: chartType !== 'bar', // Nascondi le etichette per gli istogrammi
                         autoSkip: true,
                         maxRotation: 45,
                         minRotation: 45
                     },
                     grid: {
-                        display: !legendElement
+                        display: chartType !== 'bar' // Nascondi la griglia per gli istogrammi
                     }
                 },
                 y: {
@@ -660,10 +708,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Crea il grafico temporaneo per l'esportazione
+        const ctx = exportCanvas.getContext('2d');
         const exportChart = new Chart(ctx, {
             type: chartType,
             data: {
-                labels: legendElement ? labels.map(() => '') : labels,
+                labels: chartType === 'bar' ? labels.map(() => '') : labels,
                 datasets: [{
                     label: displayTitle,
                     data: values,
@@ -700,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
             pdf.setTextColor(100, 100, 100);
             pdf.text(`Esportato il ${dateStr} alle ${timeStr}`, 10, 10);
             
-            // Usa html2canvas per catturare l'intero container con grafico e legenda
+            // Usa html2canvas per catturare l'intero container con titolo, grafico e legenda
             html2canvas(tempContainer, {
                 backgroundColor: 'white',
                 scale: 2, // Migliora la qualità dell'immagine
