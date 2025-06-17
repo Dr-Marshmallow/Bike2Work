@@ -577,6 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
             legendElement.style.right = '10px';
             legendElement.style.top = '10px';
             legendElement.style.maxHeight = 'none';
+            legendElement.style.maxWidth = '250px'; // Imposta una larghezza massima per la legenda
             tempContainer.appendChild(legendElement);
         }
         
@@ -623,6 +624,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 tooltip: {
                     enabled: false
+                }
+            },
+            layout: {
+                padding: {
+                    top: 10,
+                    right: legendElement ? 280 : 10, // Aumenta lo spazio a destra se c'è la legenda
+                    bottom: 10,
+                    left: 10
                 }
             }
         };
