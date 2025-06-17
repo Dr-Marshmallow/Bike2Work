@@ -586,10 +586,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const columnName = chartData.column;
         const displayTitle = isCheckbox ? `${columnName} (risposte multiple)` : columnName;
         
+        // Prepara i dati per l'esportazione
+        const labels = Object.keys(chartData.data);
+        const values = Object.values(chartData.data);
+        const chartType = chartInstance.config.type;
+        
+        // Adatta le dimensioni del contenitore in base alla lunghezza della legenda
+        const hasLongLegend = labels.length > 15 || labels.some(label => label.length > 30);
+        const useMultiColumnLegend = labels.length > 20;
+        
         // Crea un contenitore temporaneo strutturato per l'esportazione
         const tempContainer = document.createElement('div');
-        tempContainer.style.width = '800px';
-        tempContainer.style.height = '650px'; // Aumentato per fare spazio al titolo
+        tempContainer.style.width = hasLongLegend ? '1000px' : '800px';
+        tempContainer.style.height = hasLongLegend ? '750px' : '650px';
         tempContainer.style.position = 'absolute';
         tempContainer.style.left = '-9999px';
         tempContainer.style.top = '-9999px';
@@ -620,29 +629,32 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Area per il grafico (a sinistra)
         const chartArea = document.createElement('div');
-        chartArea.style.flex = '1';
+        chartArea.style.width = hasLongLegend ? '60%' : '70%';
         chartArea.style.height = '100%';
         chartLegendContainer.appendChild(chartArea);
         
         // Canvas per il grafico
         const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = 550; // Ridotto per fare spazio alla legenda
-        exportCanvas.height = 550;
+        exportCanvas.width = hasLongLegend ? 600 : 550;
+        exportCanvas.height = hasLongLegend ? 600 : 550;
         chartArea.appendChild(exportCanvas);
         
         // Area per la legenda (a destra)
         const legendArea = document.createElement('div');
-        legendArea.style.width = '230px';
+        legendArea.style.width = hasLongLegend ? '40%' : '30%';
         legendArea.style.paddingLeft = '15px';
         legendArea.style.height = '100%';
-        legendArea.style.overflowY = 'auto';
+        legendArea.style.boxSizing = 'border-box';
+        
+        // Se ci sono molte etichette, usa un layout a più colonne
+        if (useMultiColumnLegend) {
+            legendArea.style.columnCount = '2';
+            legendArea.style.columnGap = '20px';
+        }
+        
         chartLegendContainer.appendChild(legendArea);
         
-        // Prepara i dati per l'esportazione
-        const labels = Object.keys(chartData.data);
-        const values = Object.values(chartData.data);
         const colors = generateColors(labels.length);
-        const chartType = chartInstance.config.type;
         
         // Crea la legenda personalizzata
         if (chartType === 'bar') {
@@ -653,6 +665,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 infoDiv.style.marginBottom = '15px';
                 infoDiv.style.fontStyle = 'italic';
                 infoDiv.style.color = '#666';
+                infoDiv.style.columnSpan = 'all'; // Per layout multicolonna
                 infoDiv.textContent = 'Domanda con risposte multiple';
                 legendArea.appendChild(infoDiv);
             }
@@ -667,7 +680,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Indicatore di colore
                 const colorBox = document.createElement('span');
                 colorBox.style.display = 'inline-block';
-                colorBox.style.width = '12px';
+                colorBox.style.minWidth = '12px';
                 colorBox.style.height = '12px';
                 colorBox.style.backgroundColor = colors[index];
                 colorBox.style.marginRight = '8px';
@@ -678,7 +691,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const labelText = document.createElement('span');
                 labelText.style.wordBreak = 'break-word';
                 labelText.style.lineHeight = '1.2';
-                labelText.textContent = `${label} (${values[index]})`;
+                labelText.style.fontSize = hasLongLegend ? '11px' : '12px';
+                
+                // Tronca etichette estremamente lunghe
+                const displayedLabel = label.length > 80 ? label.substring(0, 77) + '...' : label;
+                labelText.textContent = `${displayedLabel} (${values[index]})`;
                 
                 item.appendChild(colorBox);
                 item.appendChild(labelText);
