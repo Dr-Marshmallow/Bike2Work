@@ -75,12 +75,18 @@ document.addEventListener('DOMContentLoaded', function() {
             tableContainer.classList.remove('hidden');
             labelsContainer.classList.add('hidden');
             
+            // Gestione del pulsante di esportazione
+            exportPdfBtn.disabled = false;
+            
             // Genera la tabella
             generateTable(column);
         } else {
             // Mostra il grafico e nascondi la tabella
             chartContainer.classList.remove('hidden');
             tableContainer.classList.add('hidden');
+            
+            // Gestione del pulsante di esportazione
+            exportPdfBtn.disabled = false;
             
             // Genera il grafico
             generateChart(column, chartType);

@@ -14,61 +14,66 @@
     <div class="container">
         <header>
             <h1>Bike2Work - Dashboard Interattiva</h1>
-            <p>Visualizzazione dei dati dal file "Risposte_unificate.xlsx"</p>
         </header>
 
-        <div class="controls">
-            <div class="form-group">
-                <label for="column-select">Seleziona una colonna:</label>
-                <select id="column-select" class="form-control">
-                    <option value="" selected disabled>Scegli una colonna...</option>
-                </select>
+        <div class="dashboard-content">
+            <div class="dashboard-controls">
+                <div class="controls-panel">
+                    <div class="form-group">
+                        <label for="column-select">Seleziona una colonna:</label>
+                        <select id="column-select" class="form-control">
+                            <option value="" selected disabled>Scegli una colonna...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="chart-type">Tipo di grafico:</label>
+                        <select id="chart-type" class="form-control">
+                            <option value="bar" selected>Istogramma</option>
+                            <option value="pie">Grafico a Torta</option>
+                            <option value="doughnut">Grafico a Ciambella</option>
+                            <option value="table">Tabella</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="error-message" class="error-message hidden"></div>
+
+                <div id="chart-container" class="chart-container">
+                    <canvas id="chart-canvas"></canvas>
+                </div>
+                
+                <div id="table-container" class="hidden">
+                    <table id="data-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Opzione</th>
+                                <th>Conteggio</th>
+                                <th>Percentuale</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- I dati della tabella verranno inseriti qui dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="export-container">
+                    <div class="export-separator"></div>
+                    <div class="chart-actions">
+                        <button id="export-pdf" class="btn secondary-btn" disabled>Esporta come PDF</button>
+                    </div>
+                </div>
             </div>
             
-            <div class="form-group">
-                <label for="chart-type">Tipo di grafico:</label>
-                <select id="chart-type" class="form-control">
-                    <option value="bar" selected>Istogramma</option>
-                    <option value="pie">Grafico a Torta</option>
-                    <option value="doughnut">Grafico a Ciambella</option>
-                    <option value="table">Tabella</option>
-                </select>
+            <div id="labels-container" class="labels-container">
+                <h3>Ordinamento delle etichette</h3>
+                <p>Trascina le etichette per riordinare i dati nel grafico</p>
+                <ul id="sortable-labels" class="sortable-list"></ul>
             </div>
-        </div>
-
-        <div id="error-message" class="error-message hidden"></div>
-
-        <div id="chart-container" class="chart-container">
-            <canvas id="chart-canvas"></canvas>
-        </div>
-
-        <div id="table-container" class="hidden">
-            <table id="data-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th>Opzione</th>
-                        <th>Conteggio</th>
-                        <th>Percentuale</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- I dati della tabella verranno inseriti qui dinamicamente -->
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="chart-actions">
-            <button id="export-pdf" class="btn secondary-btn" disabled>Esporta come PDF</button>
-        </div>
-        
-        <div id="labels-container" class="labels-container">
-            <h3>Ordinamento delle etichette</h3>
-            <p>Trascina le etichette per riordinare i dati nel grafico</p>
-            <ul id="sortable-labels" class="sortable-list"></ul>
         </div>
 
         <footer>
-            <p>Visualizzazione interattiva dei dati di "Risposte_unificate.xlsx"</p>
         </footer>
     </div>
 
