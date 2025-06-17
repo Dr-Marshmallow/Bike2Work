@@ -26,14 +26,34 @@
                         </select>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="chart-type">Tipo di grafico:</label>
-                        <select id="chart-type" class="form-control">
-                            <option value="bar" selected>Istogramma</option>
-                            <option value="pie">Grafico a Torta</option>
-                            <option value="doughnut">Grafico a Ciambella</option>
-                            <option value="table">Tabella</option>
-                        </select>
+                    <div class="chart-type-selector">
+                        <label>Tipo di grafico:</label>
+                        <div class="chart-type-options">
+                            <div class="chart-type-option active" data-type="bar" data-tooltip="Istogramma">
+                                <div class="chart-icon bar-icon">
+                                    <div class="bar-item"></div>
+                                    <div class="bar-item"></div>
+                                    <div class="bar-item"></div>
+                                    <div class="bar-item"></div>
+                                </div>
+                            </div>
+                            <div class="chart-type-option" data-type="pie" data-tooltip="Torta">
+                                <div class="chart-icon pie-icon"></div>
+                            </div>
+                            <div class="chart-type-option" data-type="doughnut" data-tooltip="Ciambella">
+                                <div class="chart-icon doughnut-icon">
+                                    <div class="doughnut-outer"></div>
+                                    <div class="doughnut-inner"></div>
+                                </div>
+                            </div>
+                            <div class="chart-type-option" data-type="table" data-tooltip="Tabella">
+                                <div class="chart-icon table-icon">
+                                    <div class="table-row"></div>
+                                    <div class="table-row"></div>
+                                    <div class="table-row"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -74,6 +94,7 @@
         </div>
 
         <footer>
+            <p></p>
         </footer>
     </div>
 

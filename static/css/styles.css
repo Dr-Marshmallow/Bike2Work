@@ -48,6 +48,7 @@ header h1 {
 .form-group {
     flex: 1;
     min-width: 250px;
+    margin-right: 10px;
 }
 
 label {
@@ -176,6 +177,7 @@ label {
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
     position: relative;
     overflow: hidden;
+    align-items: flex-start;
 }
 
 .controls-panel::before {
@@ -447,4 +449,214 @@ footer {
     width: 100%;
     border-top: 1px solid #dee2e6;
     margin-bottom: 15px;
+}
+
+/* Stile per il selettore di tipo grafico */
+.chart-type-selector {
+    flex: 1;
+    min-width: 300px;
+}
+
+.chart-type-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+    height: 100%;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.chart-type-option {
+    background-color: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 8px;
+    height: 46px;
+    width: 46px;
+    min-width: 46px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin: 2px 8px 2px 0;
+}
+
+.chart-type-option:hover {
+    border-color: #4CA1AF;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(76, 161, 175, 0.2);
+}
+
+.chart-type-option.active {
+    border-color: #2c3e50;
+    background-color: rgba(44, 62, 80, 0.05);
+    box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.2);
+}
+
+/* Tooltip per il tipo di grafico */
+.chart-type-option::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2c3e50;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.chart-type-option:hover::after {
+    opacity: 1;
+    visibility: visible;
+    bottom: -25px;
+}
+
+.chart-icon {
+    width: 30px;
+    height: 30px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Icona Istogramma */
+.bar-icon {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    width: 28px;
+    height: 28px;
+}
+
+.bar-item {
+    width: 5px;
+    background: linear-gradient(180deg, #4CA1AF 0%, #2c3e50 100%);
+    border-radius: 1px 1px 0 0;
+}
+
+.bar-item:nth-child(1) {
+    height: 15px;
+}
+
+.bar-item:nth-child(2) {
+    height: 22px;
+}
+
+.bar-item:nth-child(3) {
+    height: 12px;
+}
+
+.bar-item:nth-child(4) {
+    height: 18px;
+}
+
+/* Icona Torta */
+.pie-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: conic-gradient(
+        #2c3e50 0deg 90deg, 
+        #4CA1AF 90deg 200deg, 
+        #34495e 200deg 360deg
+    );
+}
+
+/* Icona Ciambella */
+.doughnut-icon {
+    width: 28px;
+    height: 28px;
+    position: relative;
+}
+
+.doughnut-outer {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(
+        #2c3e50 0deg 90deg, 
+        #4CA1AF 90deg 200deg, 
+        #34495e 200deg 360deg
+    );
+}
+
+.doughnut-inner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 50%;
+}
+
+/* Icona Tabella */
+.table-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.table-row {
+    width: 100%;
+    height: 6px;
+    background-color: #e0e0e0;
+    position: relative;
+}
+
+.table-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 30%;
+    background-color: #4CA1AF;
+}
+
+.table-row:nth-child(2)::before {
+    width: 70%;
+}
+
+.table-row:nth-child(3)::before {
+    width: 45%;
+}
+
+/* Responsive per il selettore di grafici */
+@media (max-width: 768px) {
+    .chart-type-options {
+        justify-content: center;
+    }
+    
+    .chart-type-option {
+        width: calc(50% - 10px);
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-type-option {
+        width: 100%;
+    }
+}
+
+/* Stile per fare in modo che i selettori sembrino allineati */
+.chart-type-selector label, .form-group label {
+    margin-bottom: 10px;
+    display: block;
 } 

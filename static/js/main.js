@@ -2,7 +2,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Elementi DOM
     const columnSelect = document.getElementById('column-select');
-    const chartTypeSelect = document.getElementById('chart-type');
     const chartCanvas = document.getElementById('chart-canvas');
     const chartContainer = document.getElementById('chart-container');
     const tableContainer = document.getElementById('table-container');
@@ -11,6 +10,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorMessage = document.getElementById('error-message');
     const labelsContainer = document.getElementById('labels-container');
     const sortableLabelsContainer = document.getElementById('sortable-labels');
+    const chartTypeOptions = document.querySelectorAll('.chart-type-option');
+    
+    // Variabile per tenere traccia del tipo di grafico selezionato
+    let currentChartType = 'bar'; // Default: istogramma
     
     // Variabili globali
     let chartInstance = null;
@@ -25,8 +28,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Event listeners
     columnSelect.addEventListener('change', handleSelectionChange);
-    chartTypeSelect.addEventListener('change', handleSelectionChange);
     exportPdfBtn.addEventListener('click', exportChartAsPdf);
+    
+    // Gestione click sulle opzioni del tipo di grafico
+    chartTypeOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Rimuovi la classe active da tutte le opzioni
+            chartTypeOptions.forEach(opt => opt.classList.remove('active'));
+            
+            // Aggiungi la classe active all'opzione selezionata
+            this.classList.add('active');
+            
+            // Aggiorna il tipo di grafico corrente
+            currentChartType = this.getAttribute('data-type');
+            
+            // Aggiorna la visualizzazione
+            handleSelectionChange();
+        });
+    });
     
     /**
      * Carica le colonne disponibili dal file Excel
@@ -62,14 +81,13 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function handleSelectionChange() {
         const column = columnSelect.value;
-        const chartType = chartTypeSelect.value;
         
         if (!column) return;
         
         // Nascondi eventuali messaggi di errore
         errorMessage.classList.add('hidden');
         
-        if (chartType === 'table') {
+        if (currentChartType === 'table') {
             // Mostra la tabella e nascondi il grafico
             chartContainer.classList.add('hidden');
             tableContainer.classList.remove('hidden');
@@ -89,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
             exportPdfBtn.disabled = false;
             
             // Genera il grafico
-            generateChart(column, chartType);
+            generateChart(column, currentChartType);
         }
     }
     
@@ -412,11 +430,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const newColors = generateColors(newLabels.length);
         
         // Aggiorna i dati del grafico
-        const chartType = chartInstance.config.type;
         const isCheckbox = chartData.is_checkbox === true;
         
         // Per gli istogrammi, manteniamo le etichette vuote nella visualizzazione ma conserviamo quelle reali per le tooltip
-        if (chartType === 'bar') {
+        if (currentChartType === 'bar') {
             // Per istogrammi, visualizza etichette vuote ma memorizza quelle reali per tooltip
             chartInstance.data.labels = newLabels.map(() => '');
             
@@ -548,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(loadingIndicator);
         
         // Controlla se si sta esportando una tabella o un grafico
-        const chartType = chartTypeSelect.value;
+        const chartType = currentChartType;
         
         if (chartType === 'table') {
             exportTableAsPdf();
@@ -634,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Prepara i dati per l'esportazione
             const labels = Object.keys(chartData.data);
             const values = Object.values(chartData.data);
-            const chartType = chartInstance.config.type;
+            const chartType = currentChartType;
             
             // Adatta le dimensioni del contenitore in base alla lunghezza della legenda
             const hasLongLegend = labels.length > 15 || labels.some(label => label.length > 30);
