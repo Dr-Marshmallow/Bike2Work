@@ -436,26 +436,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Raccogli tutte le etichette nell'ordine attuale dalla lista ordinabile
         const items = Array.from(sortableLabelsContainer.querySelectorAll('.sortable-item'));
         
-        // Estrai le etichette direttamente dagli elementi (non più dagli indici)
+        // Estrai le etichette direttamente dagli elementi
         const newLabels = items.map(item => item.dataset.label);
         
-        // Crea array per i valori e i colori nel nuovo ordine
+        // Ottieni i valori corrispondenti alle etichette nel nuovo ordine
         const newValues = [];
-        const newColors = [];
-        
-        // Per ogni etichetta nel nuovo ordine, trova il valore e il colore corrispondenti
         const originalLabels = Object.keys(chartData.data);
         const originalValues = Object.values(chartData.data);
-        const originalColors = chartInstance.data.datasets[0].backgroundColor;
         
-        // Costruisci i nuovi array di valori e colori in base al nuovo ordine delle etichette
+        // Costruisci i valori in base al nuovo ordine delle etichette
         newLabels.forEach(label => {
             const originalIndex = originalLabels.indexOf(label);
             if (originalIndex !== -1) {
                 newValues.push(originalValues[originalIndex]);
-                newColors.push(originalColors[originalIndex]);
             }
         });
+        
+        // Genera nuovi colori in ordine arcobaleno
+        const newColors = generateColors(newLabels.length);
         
         // Aggiorna i dati del grafico
         const chartType = chartInstance.config.type;
@@ -503,6 +501,26 @@ document.addEventListener('DOMContentLoaded', function() {
             newData[label] = newValues[index];
         });
         chartData.data = newData;
+        
+        // Aggiorna anche i colori degli elementi nella lista ordinabile
+        updateSortableColors(newColors);
+    }
+    
+    /**
+     * Aggiorna i colori degli elementi nella lista ordinabile
+     */
+    function updateSortableColors(colors) {
+        const items = sortableLabelsContainer.querySelectorAll('.sortable-item');
+        
+        // Aggiorna i colori degli indicatori
+        items.forEach((item, index) => {
+            if (index < colors.length) {
+                const colorIndicator = item.querySelector('.color-indicator');
+                if (colorIndicator) {
+                    colorIndicator.style.backgroundColor = colors[index];
+                }
+            }
+        });
     }
     
     /**
@@ -908,17 +926,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Genera un array di colori casuali distinti tra loro
+     * Genera un array di colori distribuiti ordinatamente in stile arcobaleno
      */
     function generateColors(count) {
         const colors = [];
+        
+        // Punto di partenza dell'arcobaleno (un rosso vibrante)
+        const startHue = 0;
+        
+        // Distribuzione uniforme nello spettro dei colori
         const hueStep = 360 / count;
         
         for (let i = 0; i < count; i++) {
-            const h = Math.floor(i * hueStep);
-            const s = Math.floor(50 + Math.random() * 30); // 50-80%
-            const l = Math.floor(40 + Math.random() * 20); // 40-60%
-            colors.push(`hsl(${h}, ${s}%, ${l}%)`);
+            // Calcola la tonalità in base alla posizione
+            const hue = (startHue + i * hueStep) % 360;
+            
+            // Saturazione e luminosità fisse per colori vivaci e distinti
+            const saturation = 70; // Colori abbastanza saturi
+            const lightness = 50;  // Luminosità media per buona visibilità
+            
+            // L'ordine dei colori sarà: rosso, arancione, giallo, verde, ciano, blu, viola, magenta, e così via
+            colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
         }
         
         return colors;
