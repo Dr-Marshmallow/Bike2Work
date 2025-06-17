@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listener per il pulsante di esportazione PDF
     exportPdfBtn.addEventListener('click', function() {
         if (chartInstance) {
-            exportChartAsPDF();
+            exportChartAsPdf();
         }
     });
     
@@ -134,6 +134,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
+                // Verifica se si tratta di una colonna con risposte multiple (checkbox)
+                const isCheckbox = data.is_checkbox === true;
+                
+                // Se è una colonna checkbox, aggiorna il titolo per indicarlo
+                const displayColumn = isCheckbox ? `${column} (risposte multiple)` : column;
+                
                 // Genera colori casuali
                 const colors = generateColors(labels.length);
                 
@@ -181,6 +187,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Crea la legenda personalizzata per gli istogrammi
                 if (isBarChart) {
+                    // Aggiungi l'informazione che si tratta di risposte multiple, se applicabile
+                    if (isCheckbox) {
+                        const infoDiv = document.createElement('div');
+                        infoDiv.style.fontSize = '11px';
+                        infoDiv.style.marginBottom = '10px';
+                        infoDiv.style.fontStyle = 'italic';
+                        infoDiv.style.color = '#666';
+                        infoDiv.textContent = 'Domanda con risposte multiple';
+                        customLegendContainer.appendChild(infoDiv);
+                    }
+                    
                     labels.forEach((label, index) => {
                         const item = document.createElement('div');
                         item.style.display = 'flex';
@@ -231,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         title: {
                             display: true,
-                            text: `${column}`,
+                            text: displayColumn, // Usa il titolo aggiornato
                             font: {
                                 size: 16
                             },
@@ -252,9 +269,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                     }
                                     
                                     const value = context.raw || 0;
-                                    const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
+                                    
+                                    if (isCheckbox) {
+                                        // Per le domande con risposte multiple, non mostrare la percentuale sul totale 
+                                        // (non ha molto senso poiché una persona può selezionare più opzioni)
+                                        return `${label}: ${value}`;
+                                    } else {
+                                        const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
                                 }
                             }
                         }
@@ -299,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: {
                         labels: isBarChart ? labels.map(() => '') : labels, // Usa etichette vuote per istogrammi
                         datasets: [{
-                            label: column,
+                            label: displayColumn, // Usa il titolo aggiornato anche qui
                             data: values,
                             backgroundColor: colors,
                             borderColor: 'white',
@@ -313,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 exportPdfBtn.disabled = false;
                 
                 // Popola e mostra la lista ordinabile
-                populateSortableLabels(labels, values, colors);
+                populateSortableLabels(labels, values, colors, isCheckbox);
             })
             .catch(error => {
                 console.error('Errore nella generazione del grafico:', error);
@@ -326,9 +350,21 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Popola la lista ordinabile con le etichette del grafico
      */
-    function populateSortableLabels(labels, values, colors) {
+    function populateSortableLabels(labels, values, colors, isCheckbox = false) {
         // Pulisci la lista esistente
         sortableLabelsContainer.innerHTML = '';
+        
+        // Se è una domanda con checkbox, aggiungi un'informazione
+        if (isCheckbox) {
+            const infoElement = document.createElement('div');
+            infoElement.className = 'checkbox-info';
+            infoElement.textContent = 'Domanda con risposte multiple (checkbox)';
+            infoElement.style.marginBottom = '10px';
+            infoElement.style.fontStyle = 'italic';
+            infoElement.style.fontSize = '14px';
+            infoElement.style.color = '#666';
+            sortableLabelsContainer.appendChild(infoElement);
+        }
         
         // Crea gli elementi della lista
         labels.forEach((label, index) => {
@@ -383,230 +419,325 @@ document.addEventListener('DOMContentLoaded', function() {
             chosenClass: 'sortable-chosen',
             onEnd: function(evt) {
                 // Riordina il grafico in base al nuovo ordine
-                updateChartOrder();
+                onSortUpdate(evt);
             }
         });
     }
     
     /**
-     * Aggiorna l'ordine del grafico in base all'ordine delle etichette
+     * Gestisce l'aggiornamento dell'ordine delle etichette
      */
-    function updateChartOrder() {
-        if (!chartInstance || !chartData) return;
+    function onSortUpdate(evt) {
+        // Ottieni il nuovo ordine
+        const items = sortableLabelsContainer.querySelectorAll('.sortable-item');
+        const newIndices = Array.from(items).map(item => parseInt(item.dataset.index));
         
-        // Ottieni il nuovo ordine delle etichette
-        const items = Array.from(sortableLabelsContainer.querySelectorAll('.sortable-item'));
-        const newOrder = items.map(item => parseInt(item.dataset.index, 10));
+        // Riorganizza i dati
+        const oldLabels = Object.keys(chartData.data);
+        const oldValues = Object.values(chartData.data);
         
-        // Ottieni i dati attuali del grafico
-        const currentLabels = [...chartInstance.data.labels];
-        const currentData = [...chartInstance.data.datasets[0].data];
-        const currentColors = [...chartInstance.data.datasets[0].backgroundColor];
+        const newLabels = newIndices.map(index => oldLabels[index]);
+        const newValues = newIndices.map(index => oldValues[index]);
         
-        // Riordina i dati in base al nuovo ordine
-        const newLabels = newOrder.map(index => currentLabels[index]);
-        const newData = newOrder.map(index => currentData[index]);
-        const newColors = newOrder.map(index => currentColors[index]);
+        // Verifica se si tratta di una domanda con risposte multiple
+        const isCheckbox = chartData.is_checkbox === true;
         
         // Aggiorna il grafico con il nuovo ordine
-        chartInstance.data.labels = newLabels;
-        chartInstance.data.datasets[0].data = newData;
-        chartInstance.data.datasets[0].backgroundColor = newColors;
+        updateChart(newLabels, newValues, isCheckbox);
+    }
+    
+    /**
+     * Aggiorna il grafico con le nuove etichette e valori
+     */
+    function updateChart(labels, values, isCheckbox = false) {
+        // Genera nuovi colori
+        const colors = generateColors(labels.length);
+        
+        // Ottieni il tipo di grafico corrente
+        const chartType = chartInstance.config.type;
+        
+        // Aggiorna i dati
+        chartInstance.data.labels = chartType === 'bar' ? labels.map(() => '') : labels;
+        chartInstance.data.datasets[0].data = values;
+        chartInstance.data.datasets[0].backgroundColor = colors;
+        
+        // Aggiorna il titolo se necessario
+        const currentColumn = chartData.column;
+        const displayColumn = isCheckbox ? `${currentColumn} (risposte multiple)` : currentColumn;
+        chartInstance.options.plugins.title.text = displayColumn;
+        
+        // Aggiorna la legenda personalizzata per gli istogrammi
+        if (chartType === 'bar') {
+            // Trova la legenda esistente
+            const existingLegend = document.getElementById('custom-legend');
+            if (existingLegend) {
+                existingLegend.innerHTML = '';
+                
+                // Aggiungi l'informazione sulla checkbox se necessario
+                if (isCheckbox) {
+                    const infoDiv = document.createElement('div');
+                    infoDiv.style.fontSize = '11px';
+                    infoDiv.style.marginBottom = '10px';
+                    infoDiv.style.fontStyle = 'italic';
+                    infoDiv.style.color = '#666';
+                    infoDiv.textContent = 'Domanda con risposte multiple';
+                    existingLegend.appendChild(infoDiv);
+                }
+                
+                // Crea le nuove etichette
+                labels.forEach((label, index) => {
+                    const item = document.createElement('div');
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'flex-start';
+                    item.style.marginBottom = '8px';
+                    
+                    // Indicatore di colore
+                    const colorBox = document.createElement('span');
+                    colorBox.style.display = 'inline-block';
+                    colorBox.style.width = '12px';
+                    colorBox.style.height = '12px';
+                    colorBox.style.backgroundColor = colors[index];
+                    colorBox.style.marginRight = '8px';
+                    colorBox.style.marginTop = '2px';
+                    colorBox.style.flexShrink = '0';
+                    
+                    // Testo dell'etichetta
+                    const labelText = document.createElement('span');
+                    labelText.style.wordBreak = 'break-all';
+                    labelText.style.lineHeight = '1.2';
+                    labelText.textContent = label;
+                    
+                    item.appendChild(colorBox);
+                    item.appendChild(labelText);
+                    
+                    existingLegend.appendChild(item);
+                });
+            }
+        }
         
         // Aggiorna il grafico
         chartInstance.update();
         
-        // Aggiorna anche la legenda personalizzata se esiste
-        updateCustomLegend(newOrder);
+        // Aggiorna i dati memorizzati
+        chartData.data = labels.reduce((obj, label, index) => {
+            obj[label] = values[index];
+            return obj;
+        }, {});
     }
     
     /**
-     * Aggiorna la legenda personalizzata in base al nuovo ordine
+     * Esporta il grafico corrente come PDF
      */
-    function updateCustomLegend(newOrder) {
-        const customLegend = document.getElementById('custom-legend');
-        if (!customLegend) return;
+    function exportChartAsPdf() {
+        if (!chartInstance) {
+            showError('Nessun grafico da esportare');
+            return;
+        }
         
-        // Ottieni tutti gli elementi della legenda
-        const items = Array.from(customLegend.children);
-        if (items.length !== newOrder.length) return;
+        // Mostra un indicatore di caricamento
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.id = 'export-loading';
+        loadingIndicator.style.position = 'fixed';
+        loadingIndicator.style.top = '50%';
+        loadingIndicator.style.left = '50%';
+        loadingIndicator.style.transform = 'translate(-50%, -50%)';
+        loadingIndicator.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        loadingIndicator.style.color = 'white';
+        loadingIndicator.style.padding = '20px';
+        loadingIndicator.style.borderRadius = '10px';
+        loadingIndicator.style.zIndex = '1000';
+        loadingIndicator.textContent = 'Esportazione in corso...';
+        document.body.appendChild(loadingIndicator);
         
-        // Crea un array temporaneo degli elementi nel nuovo ordine
-        const newItems = newOrder.map(index => items[index]);
+        const chartContainer = chartCanvas.parentNode;
+        const isCheckbox = chartData.is_checkbox === true;
         
-        // Svuota la legenda
-        customLegend.innerHTML = '';
+        // Clona il grafico e la legenda per l'esportazione
+        const tempContainer = document.createElement('div');
+        tempContainer.style.width = '800px';
+        tempContainer.style.height = '600px';
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-9999px';
+        tempContainer.style.top = '-9999px';
         
-        // Aggiungi gli elementi nel nuovo ordine
-        newItems.forEach(item => {
-            customLegend.appendChild(item);
-        });
-    }
-    
-    /**
-     * Esporta il grafico corrente come PDF, includendo la legenda personalizzata
-     */
-    function exportChartAsPDF() {
-        try {
-            // Ottieni il titolo del grafico per il nome del file
-            const title = chartInstance.options.plugins.title.text || 'grafico';
-            const fileName = title.replace(/:/g, '-').replace(/\s+/g, '_') + '.pdf';
-            
-            // Verifica se esiste una legenda personalizzata
-            const customLegend = document.getElementById('custom-legend');
-            const isBarChart = chartInstance.config.type === 'bar';
-            
-            // Prepara un div temporaneo per contenere il grafico e la legenda
-            const container = document.createElement('div');
-            container.style.position = 'absolute';
-            container.style.left = '-9999px'; // Fuori dallo schermo
-            container.style.backgroundColor = 'white';
-            container.style.width = '1000px'; // Dimensione fissa più grande
-            
-            // Crea un nuovo canvas per il grafico
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = 700; // Dimensione fissa per il grafico
-            tempCanvas.height = 500;
-            tempCanvas.style.float = 'left';
-            
-            // Copia il grafico originale nel canvas temporaneo
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.fillStyle = 'white';
-            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-            
-            // Ridisegna il grafico nel canvas temporaneo
-            const tempChart = new Chart(tempCtx, {
-                type: chartInstance.config.type,
-                data: chartInstance.config.data,
-                options: {
-                    ...chartInstance.config.options,
-                    responsive: false,
-                    animation: false,
-                    plugins: {
-                        ...chartInstance.config.options.plugins,
-                        legend: {
-                            display: !isBarChart
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = 800;
+        exportCanvas.height = 600;
+        exportCanvas.style.backgroundColor = 'white';
+        
+        tempContainer.appendChild(exportCanvas);
+        document.body.appendChild(tempContainer);
+        
+        // Clona la legenda se esiste
+        let legendElement = null;
+        const originalLegend = document.getElementById('custom-legend');
+        if (originalLegend) {
+            legendElement = originalLegend.cloneNode(true);
+            legendElement.style.position = 'absolute';
+            legendElement.style.right = '10px';
+            legendElement.style.top = '10px';
+            legendElement.style.maxHeight = 'none';
+            tempContainer.appendChild(legendElement);
+        }
+        
+        // Crea una copia del grafico per l'esportazione
+        const ctx = exportCanvas.getContext('2d');
+        const chartType = chartInstance.config.type;
+        
+        // Prepara i dati per l'esportazione
+        const labels = Object.keys(chartData.data);
+        const values = Object.values(chartData.data);
+        const colors = generateColors(labels.length);
+        
+        // Ottieni il titolo corretto
+        const columnName = chartData.column;
+        const displayTitle = isCheckbox ? `${columnName} (risposte multiple)` : columnName;
+        
+        // Imposta le opzioni per l'esportazione
+        const exportOptions = {
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: {
+                    display: chartType === 'pie' || chartType === 'doughnut',
+                    position: 'right',
+                    align: 'start',
+                    labels: {
+                        boxWidth: 15,
+                        padding: 10,
+                        font: {
+                            size: 12
                         }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: displayTitle,
+                    font: {
+                        size: 18
                     },
-                    layout: {
-                        padding: {
-                            right: 0 // Rimuovi il padding extra per la legenda
-                        }
+                    padding: {
+                        bottom: 10
+                    }
+                },
+                tooltip: {
+                    enabled: false
+                }
+            }
+        };
+        
+        // Aggiungi opzioni specifiche per i grafici a barre e linee
+        if (chartType === 'bar' || chartType === 'line') {
+            exportOptions.scales = {
+                x: {
+                    ticks: {
+                        display: !legendElement, // Mostra le etichette solo se non c'è la legenda
+                        autoSkip: true,
+                        maxRotation: 45,
+                        minRotation: 45
+                    },
+                    grid: {
+                        display: !legendElement
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
                     }
                 }
+            };
+        }
+        
+        // Crea il grafico temporaneo per l'esportazione
+        const exportChart = new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: legendElement ? labels.map(() => '') : labels,
+                datasets: [{
+                    label: displayTitle,
+                    data: values,
+                    backgroundColor: colors,
+                    borderColor: 'white',
+                    borderWidth: 1
+                }]
+            },
+            options: exportOptions
+        });
+        
+        // Aspetta il render del grafico
+        setTimeout(() => {
+            // Crea un nuovo documento PDF
+            const pdf = new jspdf.jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
             });
             
-            // Aggiungi il canvas al container
-            container.appendChild(tempCanvas);
+            // Aggiungi metadati al PDF
+            pdf.setProperties({
+                title: `Grafico ${displayTitle}`,
+                subject: 'Esportazione grafico Bike2Work',
+                creator: 'Bike2Work App',
+                author: 'Bike2Work'
+            });
             
-            // Se è un istogramma, crea e aggiungi una legenda personalizzata
-            if (isBarChart && customLegend) {
-                const legendDiv = document.createElement('div');
-                legendDiv.style.float = 'right';
-                legendDiv.style.width = '280px';
-                legendDiv.style.padding = '10px';
-                legendDiv.style.fontSize = '12px';
-                
-                // Aggiungi il titolo della legenda
-                const titleDiv = document.createElement('div');
-                titleDiv.style.fontWeight = 'bold';
-                titleDiv.style.marginBottom = '10px';
-                titleDiv.style.fontSize = '14px';
-                titleDiv.textContent = 'Legenda';
-                legendDiv.appendChild(titleDiv);
-                
-                // Clona gli elementi della legenda esistente
-                const items = Array.from(customLegend.children);
-                items.forEach(item => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.style.display = 'flex';
-                    itemDiv.style.alignItems = 'flex-start';
-                    itemDiv.style.marginBottom = '8px';
-                    
-                    // Estrai il colore e il testo
-                    const colorBox = item.querySelector('span:first-child');
-                    const labelText = item.querySelector('span:nth-child(2)');
-                    
-                    if (colorBox && labelText) {
-                        // Ricrea l'indicatore di colore
-                        const colorDiv = document.createElement('div');
-                        colorDiv.style.width = '12px';
-                        colorDiv.style.height = '12px';
-                        colorDiv.style.backgroundColor = colorBox.style.backgroundColor;
-                        colorDiv.style.marginRight = '8px';
-                        colorDiv.style.marginTop = '2px';
-                        colorDiv.style.flexShrink = '0';
-                        
-                        // Ricrea il testo dell'etichetta
-                        const textDiv = document.createElement('div');
-                        textDiv.style.wordBreak = 'break-word';
-                        textDiv.style.lineHeight = '1.2';
-                        textDiv.textContent = labelText.textContent;
-                        
-                        // Aggiungi gli elementi all'item
-                        itemDiv.appendChild(colorDiv);
-                        itemDiv.appendChild(textDiv);
-                        
-                        // Aggiungi l'item alla legenda
-                        legendDiv.appendChild(itemDiv);
-                    }
-                });
-                
-                // Aggiungi la legenda al container
-                container.appendChild(legendDiv);
-            }
+            // Aggiungi data e ora di esportazione
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('it-IT');
+            const timeStr = now.toLocaleTimeString('it-IT');
+            pdf.setFontSize(8);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text(`Esportato il ${dateStr} alle ${timeStr}`, 10, 10);
             
-            // Aggiungi il container al corpo del documento (necessario per html2canvas)
-            document.body.appendChild(container);
-            
-            // Usa html2canvas per convertire il container in un'immagine
-            html2canvas(container, {
+            // Usa html2canvas per catturare l'intero container con grafico e legenda
+            html2canvas(tempContainer, {
                 backgroundColor: 'white',
-                scale: 2 // Raddoppia la risoluzione per migliorare la qualità
-            }).then(function(canvas) {
-                // Crea un nuovo PDF
-                const { jsPDF } = window.jspdf;
-                
-                // Crea un PDF orientato in orizzontale se necessario
-                const pdf = new jsPDF({
-                    orientation: 'landscape',
-                    unit: 'mm'
-                });
-                
-                // Aggiungi un titolo al PDF
-                pdf.setFontSize(16);
-                pdf.text(title, 14, 15);
-                
-                // Calcola la dimensione dell'immagine nel PDF
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight() - 25; // Spazio per il titolo
-                
-                // Ottieni i dati dell'immagine dal canvas
+                scale: 2, // Migliora la qualità dell'immagine
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                // Converti il canvas in un'immagine
                 const imgData = canvas.toDataURL('image/png');
                 
-                // Calcola le dimensioni proporzionali per adattare l'immagine alla pagina
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-                const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
-                const imgWidthPdf = imgWidth * ratio;
-                const imgHeightPdf = imgHeight * ratio;
+                // Calcola le dimensioni e la posizione corretta nel PDF
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
                 
-                // Centra l'immagine nella pagina
-                const xPos = (pageWidth - imgWidthPdf) / 2;
+                // Calcola le dimensioni mantenendo le proporzioni
+                const ratio = canvas.width / canvas.height;
+                let imgWidth = pdfWidth - 20; // Margine di 10mm su ciascun lato
+                let imgHeight = imgWidth / ratio;
+                
+                // Se l'altezza è maggiore della pagina, adatta l'altezza
+                if (imgHeight > pdfHeight - 30) { // Margine di 15mm sopra e sotto
+                    imgHeight = pdfHeight - 30;
+                    imgWidth = imgHeight * ratio;
+                }
+                
+                // Calcola la posizione centrata
+                const x = (pdfWidth - imgWidth) / 2;
+                const y = 20; // Margine superiore di 20mm
                 
                 // Aggiungi l'immagine al PDF
-                pdf.addImage(imgData, 'PNG', xPos, 25, imgWidthPdf, imgHeightPdf);
+                pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
                 
                 // Salva il PDF
-                pdf.save(fileName);
+                pdf.save(`grafico_${displayTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
                 
-                // Rimuovi il container temporaneo
-                document.body.removeChild(container);
+                // Pulisci
+                document.body.removeChild(tempContainer);
+                document.body.removeChild(loadingIndicator);
+                exportChart.destroy();
+            }).catch(error => {
+                console.error('Errore nell\'esportazione del grafico:', error);
+                document.body.removeChild(tempContainer);
+                document.body.removeChild(loadingIndicator);
+                exportChart.destroy();
+                showError('Si è verificato un errore durante l\'esportazione del grafico');
             });
-        } catch (error) {
-            console.error('Errore durante l\'esportazione in PDF:', error);
-            showError(`Si è verificato un errore durante l'esportazione in PDF: ${error.message}`);
-        }
+        }, 500);
     }
     
     /**

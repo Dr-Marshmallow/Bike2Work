@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import sys
 from datetime import datetime
+import re
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -74,18 +75,54 @@ def get_data():
                 'data': processed_values
             })
         else:
-            # Standard handling for other columns
-            values = df[column].value_counts().to_dict()
+            # Determine if this column contains checkbox responses (comma-separated values)
+            has_multiple_values = False
+            sample_values = df[column].dropna().astype(str).tolist()[:20]  # Take a sample to check
             
-            # Convert any non-serializable objects to strings
-            processed_values = {}
-            for k, v in values.items():
-                processed_values[str(k)] = v
+            for value in sample_values:
+                if ',' in value:
+                    has_multiple_values = True
+                    break
             
-            return jsonify({
-                'column': column,
-                'data': processed_values
-            })
+            if has_multiple_values:
+                # Handle multiple checkbox responses
+                app.logger.info(f"Colonna {column} contiene risposte multiple (checkbox)")
+                
+                # Initialize counter for each unique option
+                all_options = {}
+                
+                # Process each row
+                for value in df[column].dropna().astype(str):
+                    # Split by comma and strip whitespace
+                    options = [opt.strip() for opt in value.split(',')]
+                    
+                    # Count each option
+                    for option in options:
+                        if option:  # Skip empty options
+                            all_options[option] = all_options.get(option, 0) + 1
+                
+                # Sort by frequency (optional)
+                sorted_options = dict(sorted(all_options.items(), key=lambda x: x[1], reverse=True))
+                
+                return jsonify({
+                    'column': column,
+                    'data': sorted_options,
+                    'is_checkbox': True
+                })
+            else:
+                # Standard handling for other columns
+                values = df[column].value_counts().to_dict()
+                
+                # Convert any non-serializable objects to strings
+                processed_values = {}
+                for k, v in values.items():
+                    processed_values[str(k)] = v
+                
+                return jsonify({
+                    'column': column,
+                    'data': processed_values,
+                    'is_checkbox': False
+                })
     except Exception as e:
         app.logger.error(f"Errore nel caricamento dei dati per la colonna {column}: {str(e)}")
         return jsonify({'error': str(e)}), 500
