@@ -142,20 +142,75 @@ document.addEventListener('DOMContentLoaded', function() {
                     chartInstance.destroy();
                 }
                 
-                // Determina se mostrare le etichette sulla legenda a destra
-                const hasManyLabels = labels.length > 5;
+                // Determina il tipo di grafico
                 const isBarChart = chartType === 'bar';
                 
-                // Crea un plugin personalizzato per gestire la legenda degli istogrammi
-                const legendLabelsPlugin = {
-                    id: 'legendLabels',
-                    afterDraw: function(chart) {
-                        if (isBarChart && hasManyLabels && chart.legend && chart.legend.legendItems) {
-                            // Questa parte è implementata ma non fa nulla di speciale
-                            // serve solo per assicurarsi che il plugin sia registrato
-                        }
+                // Inserisci interruzioni di linea nelle etichette lunghe
+                function wrapText(text, maxWidth = 20) {
+                    if (!text || text.length <= maxWidth) return text;
+                    
+                    let result = '';
+                    for (let i = 0; i < text.length; i += maxWidth) {
+                        result += text.substr(i, maxWidth);
+                        if (i + maxWidth < text.length) result += '\n';
                     }
-                };
+                    return result;
+                }
+                
+                // Crea un elemento DOM personalizzato per la legenda
+                const customLegendContainer = document.createElement('div');
+                customLegendContainer.id = 'custom-legend';
+                customLegendContainer.style.position = 'absolute';
+                customLegendContainer.style.right = '0px';
+                customLegendContainer.style.top = '10px';
+                customLegendContainer.style.maxWidth = '180px';
+                customLegendContainer.style.overflow = 'auto';
+                customLegendContainer.style.maxHeight = '90%';
+                customLegendContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                customLegendContainer.style.borderRadius = '5px';
+                customLegendContainer.style.padding = '10px';
+                customLegendContainer.style.boxSizing = 'border-box';
+                customLegendContainer.style.fontSize = '12px';
+                
+                // Svuota e prepara il contenitore per la legenda personalizzata
+                const chartContainer = chartCanvas.parentNode;
+                const existingLegend = document.getElementById('custom-legend');
+                if (existingLegend) {
+                    existingLegend.remove();
+                }
+                
+                // Crea la legenda personalizzata per gli istogrammi
+                if (isBarChart) {
+                    labels.forEach((label, index) => {
+                        const item = document.createElement('div');
+                        item.style.display = 'flex';
+                        item.style.alignItems = 'flex-start';
+                        item.style.marginBottom = '8px';
+                        
+                        // Indicatore di colore
+                        const colorBox = document.createElement('span');
+                        colorBox.style.display = 'inline-block';
+                        colorBox.style.width = '12px';
+                        colorBox.style.height = '12px';
+                        colorBox.style.backgroundColor = colors[index];
+                        colorBox.style.marginRight = '8px';
+                        colorBox.style.marginTop = '2px';
+                        colorBox.style.flexShrink = '0';
+                        
+                        // Testo dell'etichetta
+                        const labelText = document.createElement('span');
+                        labelText.style.wordBreak = 'break-all';
+                        labelText.style.lineHeight = '1.2';
+                        labelText.textContent = label;
+                        
+                        item.appendChild(colorBox);
+                        item.appendChild(labelText);
+                        
+                        customLegendContainer.appendChild(item);
+                    });
+                    
+                    chartContainer.appendChild(customLegendContainer);
+                }
                 
                 // Imposta le opzioni comuni per tutti i tipi di grafici
                 const commonOptions = {
@@ -163,45 +218,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: chartType === 'pie' || chartType === 'doughnut' || (isBarChart && hasManyLabels),
+                            display: chartType === 'pie' || chartType === 'doughnut', // Mostra la legenda solo per grafici a torta/ciambella
                             position: 'right',
                             align: 'start',
                             labels: {
                                 boxWidth: 15,
                                 padding: 10,
                                 font: {
-                                    size: 12
-                                },
-                                generateLabels: function(chart) {
-                                    // Personalizza le etichette della legenda per gli istogrammi con molte etichette
-                                    if (isBarChart && hasManyLabels) {
-                                        return labels.map((label, i) => {
-                                            return {
-                                                text: label,
-                                                fillStyle: colors[i],
-                                                strokeStyle: 'white',
-                                                lineWidth: 1,
-                                                hidden: false,
-                                                index: i,
-                                                // Custom field to store the actual value
-                                                value: values[i]
-                                            };
-                                        });
-                                    }
-                                    // Usa il comportamento predefinito per altri tipi di grafici
-                                    return Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                                }
-                            },
-                            onClick: function(e, legendItem, legend) {
-                                // Implementa la logica per nascondere/mostrare i dati selezionati
-                                // Solo per istogrammi con molte etichette
-                                if (isBarChart && hasManyLabels) {
-                                    const index = legendItem.index;
-                                    // Toggle visibility logic if needed
-                                }
-                                // Per tutti gli altri grafici, usa il comportamento predefinito
-                                else {
-                                    Chart.defaults.plugins.legend.onClick(e, legendItem, legend);
+                                    size: 11
                                 }
                             }
                         },
@@ -218,7 +242,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const label = context.label || '';
+                                    let label = '';
+                                    if (isBarChart) {
+                                        // Per istogrammi, usa l'etichetta originale
+                                        const index = context.dataIndex;
+                                        label = labels[index] || '';
+                                    } else {
+                                        label = context.label || '';
+                                    }
+                                    
                                     const value = context.raw || 0;
                                     const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                                     const percentage = Math.round((value / total) * 100);
@@ -230,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     layout: {
                         padding: {
                             top: 10,
-                            right: (isBarChart && hasManyLabels) ? 150 : 10,
+                            right: isBarChart ? 200 : 10, // Spazio per la legenda personalizzata
                             bottom: 10,
                             left: 10
                         }
@@ -242,9 +274,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     commonOptions.scales = {
                         x: {
                             ticks: {
+                                display: !isBarChart, // Nascondi le etichette per tutti gli istogrammi
                                 autoSkip: true,
                                 maxRotation: 45,
                                 minRotation: 45
+                            },
+                            grid: {
+                                display: !isBarChart // Nascondi anche la griglia per tutti gli istogrammi
                             }
                         },
                         y: {
@@ -261,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 chartInstance = new Chart(ctx, {
                     type: chartType,
                     data: {
-                        labels: labels,
+                        labels: isBarChart ? labels.map(() => '') : labels, // Usa etichette vuote per istogrammi
                         datasets: [{
                             label: column,
                             data: values,
@@ -270,8 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             borderWidth: 1
                         }]
                     },
-                    options: commonOptions,
-                    plugins: [legendLabelsPlugin]
+                    options: commonOptions
                 });
                 
                 // Abilita il pulsante di esportazione
@@ -380,6 +415,32 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Aggiorna il grafico
         chartInstance.update();
+        
+        // Aggiorna anche la legenda personalizzata se esiste
+        updateCustomLegend(newOrder);
+    }
+    
+    /**
+     * Aggiorna la legenda personalizzata in base al nuovo ordine
+     */
+    function updateCustomLegend(newOrder) {
+        const customLegend = document.getElementById('custom-legend');
+        if (!customLegend) return;
+        
+        // Ottieni tutti gli elementi della legenda
+        const items = Array.from(customLegend.children);
+        if (items.length !== newOrder.length) return;
+        
+        // Crea un array temporaneo degli elementi nel nuovo ordine
+        const newItems = newOrder.map(index => items[index]);
+        
+        // Svuota la legenda
+        customLegend.innerHTML = '';
+        
+        // Aggiungi gli elementi nel nuovo ordine
+        newItems.forEach(item => {
+            customLegend.appendChild(item);
+        });
     }
     
     /**
