@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const labelsContainer = document.getElementById('labels-container');
     const sortableLabelsContainer = document.getElementById('sortable-labels');
     const chartTypeOptions = document.querySelectorAll('.chart-type-option');
+    const chartLoader = document.getElementById('chart-loader');
     
     // Variabile per tenere traccia del tipo di grafico selezionato
     let currentChartType = 'bar'; // Default: istogramma
@@ -103,8 +104,11 @@ document.addEventListener('DOMContentLoaded', function() {
             chartContainer.classList.remove('hidden');
             tableContainer.classList.add('hidden');
             
+            // Mostra il loader
+            chartLoader.classList.remove('hidden');
+            
             // Gestione del pulsante di esportazione
-            exportPdfBtn.disabled = false;
+            exportPdfBtn.disabled = true;
             
             // Genera il grafico
             generateChart(column, currentChartType);
@@ -125,6 +129,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
+                // Nascondi il loader
+                chartLoader.classList.add('hidden');
+                
                 // Memorizza i dati per uso futuro
                 chartData = data;
                 
@@ -326,6 +333,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 populateSortableLabels(labels, values, colors, isCheckbox);
             })
             .catch(error => {
+                // Nascondi il loader in caso di errore
+                chartLoader.classList.add('hidden');
                 console.error('Errore nella generazione del grafico:', error);
                 showError(`Si è verificato un errore durante la generazione del grafico: ${error.message}`);
                 exportPdfBtn.disabled = true;
