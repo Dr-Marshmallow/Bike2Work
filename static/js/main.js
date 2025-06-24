@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 customLegendContainer.id = 'custom-legend';
                 customLegendContainer.style.position = 'absolute';
                 customLegendContainer.style.right = '0px';
-                customLegendContainer.style.top = '10px';
+                customLegendContainer.style.top = '40px';
                 customLegendContainer.style.maxWidth = '180px';
                 customLegendContainer.style.overflow = 'auto';
                 customLegendContainer.style.maxHeight = '90%';
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 size: 16
                             },
                             padding: {
-                                bottom: 10
+                                bottom: 30
                             }
                         },
                         tooltip: {
