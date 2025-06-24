@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  bike2work:
+    build: .
+    container_name: Bike2Work
+    ports:
+      - "7000:5000"
+    restart: always 
