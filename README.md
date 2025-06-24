@@ -13,13 +13,12 @@ Dashboard interattiva per visualizzare e analizzare i dati raccolti dal progetto
 
 ## Requisiti
 
-- Python 3.x
-- Flask
-- Pandas
-- Openpyxl
+- Python 3.x (solo se esegui senza Docker)
+- Flask, Pandas, Openpyxl, ecc. (vedi requirements.txt)
+- Oppure **solo Docker** se vuoi usare i container
 - Browser web moderno
 
-## Installazione
+## Installazione manuale (senza Docker)
 
 1. Clona il repository:
    ```
@@ -42,6 +41,33 @@ Dashboard interattiva per visualizzare e analizzare i dati raccolti dal progetto
    ```
 
 4. Apri il browser all'indirizzo [http://localhost:5000](http://localhost:5000)
+
+## Esecuzione con Docker
+
+1. Costruisci l'immagine:
+   ```
+   docker build -t bike2work .
+   ```
+2. Avvia il container mappando la porta 7000 dell'host sulla 5000 del container:
+   ```
+   docker run --name Bike2Work -p 7000:5000 --restart always bike2work
+   ```
+3. Apri il browser su [http://localhost:7000](http://localhost:7000)
+
+## Esecuzione con Docker Compose
+
+1. Assicurati di avere Docker e Docker Compose installati.
+2. Avvia l'applicazione con:
+   ```
+   docker compose up --build
+   ```
+   Questo comando:
+   - Costruisce l'immagine se necessario
+   - Avvia il container con nome `Bike2Work`
+   - Mappa la porta 7000 dell'host sulla 5000 del container
+   - Riavvia automaticamente il container in caso di errore o riavvio del sistema
+
+3. Apri il browser su [http://localhost:7000](http://localhost:7000)
 
 ## Struttura del Progetto
 
